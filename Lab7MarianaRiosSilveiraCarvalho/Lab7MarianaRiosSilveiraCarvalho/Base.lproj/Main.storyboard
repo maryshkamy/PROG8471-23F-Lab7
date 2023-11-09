@@ -23,7 +23,7 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="cjc-fL-U6m">
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="AppIcon" translatesAutoresizingMaskIntoConstraints="NO" id="cjc-fL-U6m">
                                 <rect key="frame" x="172.66666666666666" y="112" width="48" height="48"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="48" id="2Vp-71-xkn"/>
@@ -38,6 +38,9 @@
                                 <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="gray" title="Start Trip"/>
+                                <connections>
+                                    <action selector="didTapStartTrip:" destination="BYZ-38-t0r" eventType="touchUpInside" id="tKo-WG-quN"/>
+                                </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DMQ-tT-hD8">
                                 <rect key="frame" x="236.66666666666663" y="141" width="140.33333333333337" height="38"/>
@@ -47,6 +50,9 @@
                                 <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="gray" title="Stop Trip"/>
+                                <connections>
+                                    <action selector="didTapStopTrip:" destination="BYZ-38-t0r" eventType="touchUpInside" id="q0g-Cm-QDb"/>
+                                </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Current Speed" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hOq-LT-y4x">
                                 <rect key="frame" x="16" y="195" width="353" height="19.666666666666657"/>
@@ -183,6 +189,17 @@
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="klH-rZ-F8a" secondAttribute="trailing" constant="16" id="xSc-PE-lrn"/>
                         </constraints>
                     </view>
+                    <connections>
+                        <outlet property="averageSpeedLabel" destination="ajV-t2-Hd6" id="hEa-sg-wsy"/>
+                        <outlet property="currentSpeedLabel" destination="klH-rZ-F8a" id="Hhe-LK-Edn"/>
+                        <outlet property="distanceLabel" destination="mPg-td-ywb" id="3Ir-GW-n5R"/>
+                        <outlet property="logoImage" destination="cjc-fL-U6m" id="PxD-FM-jFw"/>
+                        <outlet property="mapView" destination="dAw-3Z-PhD" id="99L-xX-RCv"/>
+                        <outlet property="maxAccelerationLabel" destination="RPX-2z-fm1" id="nEV-fs-Pbm"/>
+                        <outlet property="maxSpeedLabel" destination="YOa-nV-UfC" id="au3-60-zpX"/>
+                        <outlet property="speedStatusView" destination="nZZ-Ki-Pqj" id="EUM-sq-Apw"/>
+                        <outlet property="tripStatusView" destination="0Ns-1e-Py0" id="dXK-Sh-cpo"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
@@ -190,6 +207,7 @@
         </scene>
     </scenes>
     <resources>
+        <image name="AppIcon" width="1024" height="1024"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
