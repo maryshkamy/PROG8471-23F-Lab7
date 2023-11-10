@@ -28,11 +28,13 @@ class ViewController: UIViewController {
     // MARK: - Private Variables
     private let locationManager: CLLocationManager
     private var waypoints: [CLLocation]
+    private var hasExceedSpeed: Bool
     private var maxSpeed: Double
 
     // MARK: - Initializer
         required init?(coder: NSCoder) {
             self.locationManager = CLLocationManager()
+            self.hasExceedSpeed = false
             self.waypoints = []
             self.maxSpeed = 0.0
 
@@ -123,11 +125,21 @@ extension ViewController: CLLocationManagerDelegate {
 private extension ViewController {
     func getCurrentSpeed(from location: CLLocation) {
         let speed = location.speed.toKmPerHour()
+        self.checkSpeedLimit(from: speed)
         self.currentSpeedLabel.text = "\(speed.toString()) km/h"
         print("Speed === \(speed.toString()) km/h")
+    }
+
+    func checkSpeedLimit(from speed: Double) {
+        if speed > 115.0, !hasExceedSpeed {
+            self.hasExceedSpeed = true
+            let distance = calculateTotalDistance()
+            print("The driver traveled \(distance.toKm().toString()) km before exceeding the speed limit (115 km/h).")
+        }
 
         self.speedStatusView.backgroundColor = speed > 115.0 ? .red : .clear
         self.loadViewIfNeeded()
+
     }
 
     func getMaxSpeed(from location: CLLocation) {
@@ -152,14 +164,7 @@ private extension ViewController {
     }
 
     func getDistance() {
-        var distance: Double = 0.0
-
-        for i in 1..<self.waypoints.count {
-            let startLocation = CLLocation(latitude: self.waypoints[i].coordinate.latitude, longitude: self.waypoints[i].coordinate.longitude)
-            let currentLocation = CLLocation(latitude: self.waypoints[i - 1].coordinate.latitude, longitude: self.waypoints[i - 1].coordinate.longitude)
-            distance += startLocation.distance(from: currentLocation)
-        }
-
+        let distance = calculateTotalDistance()
         self.getAverageSpeed(from: distance)
         self.distanceLabel.text = "\(distance.toKm().toString()) km"
         print("Distance === \(distance.toKm().toString()) km")
@@ -174,6 +179,18 @@ private extension ViewController {
             self.averageSpeedLabel.text = "\(averageSpeed.toString()) km/h"
             print("Average Speed === \(averageSpeed.toString()) km/h")
         }
+    }
+
+    func calculateTotalDistance() -> Double {
+        var totalDistance: Double = 0.0
+
+        for i in 1..<self.waypoints.count {
+            let startLocation = CLLocation(latitude: self.waypoints[i].coordinate.latitude, longitude: self.waypoints[i].coordinate.longitude)
+            let currentLocation = CLLocation(latitude: self.waypoints[i - 1].coordinate.latitude, longitude: self.waypoints[i - 1].coordinate.longitude)
+            totalDistance += startLocation.distance(from: currentLocation)
+        }
+
+        return totalDistance
     }
 }
 
