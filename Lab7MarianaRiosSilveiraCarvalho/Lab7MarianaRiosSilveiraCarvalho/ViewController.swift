@@ -27,12 +27,15 @@ class ViewController: UIViewController {
 
     // MARK: - Private Variables
     private let locationManager: CLLocationManager
-    private var waypoints: [CLLocation] = []
-    private var maxSpeed: Double = 0.0
+    private var waypoints: [CLLocation]
+    private var maxSpeed: Double
 
     // MARK: - Initializer
         required init?(coder: NSCoder) {
             self.locationManager = CLLocationManager()
+            self.waypoints = []
+            self.maxSpeed = 0.0
+
             super.init(coder: coder)
         }
 
@@ -44,53 +47,26 @@ class ViewController: UIViewController {
 
     // MARK: - Private Functions
     private func setup() {
-        self.setupLogo()
-        self.setupLabels()
-        self.setupStatusViews()
-        self.setupLocationServices()
+        self.setupUIComponents()
+        self.checkLocationServices()
     }
 
-    private func setupLogo() {
+    private func setupUIComponents() {
         self.logoImage.layer.cornerRadius = 24
-    }
 
-    private func setupLabels() {
-        maxSpeedLabel.text = "0.00 km/h"
-        distanceLabel.text = "0.00 km"
-        currentSpeedLabel.text = "0.00 km/h"
-        averageSpeedLabel.text = "0.00 km/h"
-        maxAccelerationLabel.text = "0.00 m/s^2"
-    }
+        self.maxSpeedLabel.text = "0.00 km/h"
+        self.distanceLabel.text = "0.00 km"
+        self.currentSpeedLabel.text = "0.00 km/h"
+        self.averageSpeedLabel.text = "0.00 km/h"
+        self.maxAccelerationLabel.text = "0.00 m/s^2"
 
-    private func setupStatusViews() {
         self.speedStatusView.backgroundColor = .clear
         self.tripStatusView.backgroundColor = .gray
-    }
-
-    private func setupLocationServices() {
-        DispatchQueue.global().async {
-            if CLLocationManager.locationServicesEnabled() {
-                self.setupLocationManager()
-            } else {
-                self.showAuthorizationStatusAlertError()
-            }
-        }
     }
 
     private func setupLocationManager() {
         self.locationManager.delegate = self
         self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
-    }
-
-    private func checkLocationManagerAuthorizationStatus() {
-        switch self.locationManager.authorizationStatus {
-        case .denied:
-            self.showAuthorizationStatusAlertError()
-        case .notDetermined:
-            self.locationManager.requestWhenInUseAuthorization()
-        default:
-            break
-        }
     }
 
     private func centerViewOnUserLocation() {
@@ -101,50 +77,82 @@ class ViewController: UIViewController {
         }
     }
 
-    private func updateSpeedStatusView(currentSpeed: Double) {
-        self.speedStatusView.backgroundColor = currentSpeed > 115.0 ? .red : .clear
+    // MARK: - IBActions Functions
+    @IBAction func didTapStartTrip(_ sender: Any) {
+        self.checkLocationManagerAuthorizationStatus()
+
+        if  self.locationManager.authorizationStatus == .authorizedWhenInUse || self.locationManager.authorizationStatus == .authorizedAlways {
+            self.centerViewOnUserLocation()
+            self.mapView.showsUserLocation = true
+            self.locationManager.startUpdatingLocation()
+            self.tripStatusView.backgroundColor = .green
+        }
+    }
+
+    @IBAction func didTapStopTrip(_ sender: Any) {
+        self.mapView.showsUserLocation = false
+        self.locationManager.stopUpdatingLocation()
+        self.tripStatusView.backgroundColor = .gray
+        self.speedStatusView.backgroundColor = .clear
+    }
+}
+
+// MARK: - CLLocationManager Delegate
+extension ViewController: CLLocationManagerDelegate {
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        self.checkLocationManagerAuthorizationStatus()
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+        print("Location === \(location)")
+        self.waypoints.append(location)
+
+        let center = CLLocationCoordinate2D(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+        let span = MKCoordinateSpan(latitudeDelta: 0.007, longitudeDelta: 0.007)
+        let region = MKCoordinateRegion(center: center, span: span)
+        self.mapView.setRegion(region, animated: true)
+        
+        self.getCurrentSpeed(from: location)
+        self.getMaxSpeed(from: location)
+        self.getDistance()
+    }
+}
+
+// MARK: - Private Extension Functions Related to Speed
+private extension ViewController {
+    func getCurrentSpeed(from location: CLLocation) {
+        let speed = location.speed.toKmPerHour()
+        self.currentSpeedLabel.text = "\(speed.toString()) km/h"
+        print("Speed === \(speed.toString()) km/h")
+
+        self.speedStatusView.backgroundColor = speed > 115.0 ? .red : .clear
         self.loadViewIfNeeded()
     }
 
-    private func showCurrentSpeed(from location: CLLocation) {
-        let speed = location.speed
-        let formattedSpeed = speed * 3.6
-        self.currentSpeedLabel.text = "\(formattedSpeed.toString()) km/h"
-        print("Speed === \(formattedSpeed.toString())")
-
-        self.showMaxSpeed(with: location)
-        self.updateSpeedStatusView(currentSpeed: formattedSpeed)
-    }
-
-    private func showMaxSpeed(with location: CLLocation) {
-        let currentSpeed = location.speed
-
-        if currentSpeed > maxSpeed {
-            maxSpeed = currentSpeed
-            self.calculateMaxAcceleration(with: maxSpeed, and: location)
+    func getMaxSpeed(from location: CLLocation) {
+        if location.speed > maxSpeed {
+            maxSpeed = location.speed
+            self.getMaxAcceleration(from: maxSpeed, and: location)
         }
 
-        let formattedSpeed = maxSpeed * 3.6
-        self.maxSpeedLabel.text = "\(formattedSpeed.toString()) km/h"
-        print("Max Speed === \(formattedSpeed.toString())")
+        self.maxSpeedLabel.text = "\(maxSpeed.toKmPerHour().toString()) km/h"
+        print("Max Speed === \(maxSpeed.toKmPerHour().toString()) km/h")
     }
 
-    private func calculateAverageSpeed() {
-        var averageSpeed: Double = 0.0
-        let count: Double = Double(self.waypoints.count)
+    func getMaxAcceleration(from maxSpeed: Double, and location: CLLocation) {
+        guard let startTime = self.waypoints.first?.timestamp else { return }
+        let time = location.timestamp.timeIntervalSince(startTime)
 
-        self.waypoints.forEach { location in
-            averageSpeed += location.speed
+        if time > 0 {
+            let maxAcceleration = maxSpeed / time
+            self.maxAccelerationLabel.text = "\(maxAcceleration.toString()) m/sˆ2"
+            print("Max Acceleration === \(maxAcceleration.toString()) m/sˆ2")
         }
-
-        let formattedSpeed = (averageSpeed / count) * 3.6
-        self.averageSpeedLabel.text = "\(formattedSpeed.toString()) km/h"
-        print("Average Speed === \(formattedSpeed.toString())")
     }
 
-    private func calculateDistance() {
+    func getDistance() {
         var distance: Double = 0.0
-
 
         for i in 1..<self.waypoints.count {
             let startLocation = CLLocation(latitude: self.waypoints[i].coordinate.latitude, longitude: self.waypoints[i].coordinate.longitude)
@@ -152,23 +160,55 @@ class ViewController: UIViewController {
             distance += startLocation.distance(from: currentLocation)
         }
 
-        let formattedDistance = distance / 1000
-        self.distanceLabel.text = "\(formattedDistance.toString()) km"
-        print("Distance === \(formattedDistance.toString())")
+        self.getAverageSpeed(from: distance)
+        self.distanceLabel.text = "\(distance.toKm().toString()) km"
+        print("Distance === \(distance.toKm().toString()) km")
     }
 
-    private func calculateMaxAcceleration(with maxSpeed: Double, and location: CLLocation) {
-        guard let startTime = self.waypoints.first?.timestamp else { return }
-        let time = location.timestamp.timeIntervalSince(startTime)
+    func getAverageSpeed(from totalDistance: Double) {
+        guard let startTime = self.waypoints.first?.timestamp, let currentTime = self.waypoints.last?.timestamp else { return }
+        let totalTime = currentTime.timeIntervalSince(startTime)
 
-        if time > 0 {
-            let maxAcceleration = maxSpeed / time
-            self.maxAccelerationLabel.text = "\(maxAcceleration.toString()) m/sˆ2"
-            print("Max Acceleration === \(maxAcceleration.toString())")
+        if totalDistance > 0, totalTime > 0 {
+            let averageSpeed = (totalDistance / totalTime).toKmPerHour()
+            self.averageSpeedLabel.text = "\(averageSpeed.toString()) km/h"
+            print("Average Speed === \(averageSpeed.toString()) km/h")
+        }
+    }
+}
+
+// MARK: - Private Extension Functions Related to Permissions
+private extension ViewController {
+    func checkLocationServices() {
+        DispatchQueue.global().async {
+            if CLLocationManager.locationServicesEnabled() {
+                self.setupLocationManager()
+            } else {
+                self.showAuthorizationStatusAlertError()
+            }
         }
     }
 
-    private func showAuthorizationStatusAlertError() {
+    func checkLocationManagerAuthorizationStatus() {
+        let authorizationStatus: CLAuthorizationStatus
+
+        if #available(iOS 14, *) {
+            authorizationStatus = self.locationManager.authorizationStatus
+        } else {
+            authorizationStatus = CLLocationManager.authorizationStatus()
+        }
+
+        switch authorizationStatus {
+        case .denied:
+            self.showAuthorizationStatusAlertError()
+        case .notDetermined:
+            self.locationManager.requestWhenInUseAuthorization()
+        default:
+            break
+        }
+    }
+
+    func showAuthorizationStatusAlertError() {
         let alert = UIAlertController(
             title: "Trip Summary needs to access your location while using the app",
             message: "To use this app, you will need to allow Trip Summary to access your location.",
@@ -183,49 +223,5 @@ class ViewController: UIViewController {
         }))
 
         self.present(alert, animated: true, completion: nil)
-    }
-
-    // MARK: - IBActions Functions
-    @IBAction func didTapStartTrip(_ sender: Any) {
-        self.checkLocationManagerAuthorizationStatus()
-        if  self.locationManager.authorizationStatus == .authorizedWhenInUse || self.locationManager.authorizationStatus == .authorizedAlways {
-            self.locationManager.requestWhenInUseAuthorization()
-            self.tripStatusView.backgroundColor = .green
-
-            centerViewOnUserLocation()
-
-            self.mapView.showsUserLocation = true
-            self.mapView.userTrackingMode = .followWithHeading
-
-            self.locationManager.startUpdatingLocation()
-        }
-    }
-
-    @IBAction func didTapStopTrip(_ sender: Any) {
-        self.tripStatusView.backgroundColor = .gray
-        self.speedStatusView.backgroundColor = .clear
-        self.locationManager.stopUpdatingLocation()
-        self.mapView.showsUserLocation = false
-    }
-}
-
-extension ViewController: CLLocationManagerDelegate {
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        self.checkLocationManagerAuthorizationStatus()
-    }
-
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
-        self.waypoints.append(location)
-        print("Location === \(location)")
-
-        let span = MKCoordinateSpan(latitudeDelta: 0.007, longitudeDelta: 0.007)
-        let center = CLLocationCoordinate2D(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
-        let region = MKCoordinateRegion(center: center, span: span)
-        self.mapView.setRegion(region, animated: true)
-        
-        self.showCurrentSpeed(from: location)
-        self.calculateAverageSpeed()
-        self.calculateDistance()
     }
 }
