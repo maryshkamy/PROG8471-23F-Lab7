@@ -25,7 +25,6 @@
 		280ADD362AF8756700082A7B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		280ADD392AF8756700082A7B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		280ADD3B2AF8756700082A7B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		280ADD412AFB3CCC00082A7B /* Lab7Location.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Lab7Location.gpx; sourceTree = "<group>"; };
 		280ADD422AFB4E6600082A7B /* Double+Conversions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Conversions.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -59,7 +58,6 @@
 		280ADD2C2AF8756600082A7B /* Lab7MarianaRiosSilveiraCarvalho */ = {
 			isa = PBXGroup;
 			children = (
-				280ADD412AFB3CCC00082A7B /* Lab7Location.gpx */,
 				280ADD3B2AF8756700082A7B /* Info.plist */,
 				280ADD2D2AF8756600082A7B /* AppDelegate.swift */,
 				280ADD422AFB4E6600082A7B /* Double+Conversions.swift */,

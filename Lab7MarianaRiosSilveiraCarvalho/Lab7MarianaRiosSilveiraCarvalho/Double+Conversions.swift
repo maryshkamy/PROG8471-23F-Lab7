@@ -16,7 +16,7 @@ extension Double {
 
     // MARK: - Convert from meter per second to kilometer per hour
     func toKmPerHour() -> Double {
-        return (self * 3.6)
+        return self < 0 ? 0 : (self * 3.6)
     }
 
     // MARK: - Convert from meter to kilometer
